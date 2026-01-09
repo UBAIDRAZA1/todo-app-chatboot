@@ -1,0 +1,17 @@
+project create
+
+pip install specifyplus
+
+specifyplus init .
+
+
+
+
+cd frontend
+npm install
+npm run build
+npm run dev
+
+
+- Backend:
+.\venv\Scripts\python -m uvicorn main:app --reload --port 8001
