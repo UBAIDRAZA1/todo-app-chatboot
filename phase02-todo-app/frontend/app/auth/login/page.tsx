@@ -31,7 +31,7 @@ export default function LoginPage() {
       if (response?.error) {
         setError(response.error.message || 'Login failed');
       } else {
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch (err: any) {
