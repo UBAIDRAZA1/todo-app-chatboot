@@ -25,13 +25,6 @@ export default function LandingPage() {
     }
   }, []);
 
-  // If user is already logged in, redirect to dashboard
-  useEffect(() => {
-    if (session.data) {
-      router.push('/dashboard');
-    }
-  }, [session.data, router]);
-
   const toggleTheme = () => {
     if (isDark) {
       document.documentElement.classList.remove('dark');
@@ -86,21 +79,33 @@ export default function LandingPage() {
               </svg>
             )}
           </Button>
-          <Link href="/auth/login">
-            <Button
-              variant="outline"
-              className="border border-gray-700 text-gray-300 hover:bg-gray-800/50 px-6 py-2 font-medium transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-            >
-              Login
-            </Button>
-          </Link>
-          <Link href="/auth/signup">
-            <Button
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 px-6 py-2 font-medium hover:scale-105"
-            >
-              Sign Up
-            </Button>
-          </Link>
+          {session.data ? (
+            <Link href="/dashboard">
+              <Button
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 px-6 py-2 font-medium hover:scale-105"
+              >
+                Go to Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/auth/login">
+                <Button
+                  variant="outline"
+                  className="border border-gray-700 text-gray-300 hover:bg-gray-800/50 px-6 py-2 font-medium transition-all duration-300 hover:scale-105 backdrop-blur-sm"
+                >
+                  Login
+                </Button>
+              </Link>
+              <Link href="/auth/signup">
+                <Button
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 px-6 py-2 font-medium hover:scale-105"
+                >
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 

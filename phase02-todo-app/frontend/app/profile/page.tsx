@@ -2,15 +2,29 @@
 
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import axios from 'axios';
 
-// Profile page component
 export default function ProfilePage() {
-  const { session, signOut } = useAuth();
+  const { session, signOut, updateSession } = useAuth();
   const router = useRouter();
+  const [imageUrl, setImageUrl] = useState('');
+  const [name, setName] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  useEffect(() => {
+    if (session?.data?.user) {
+      setName(session.data.user.name || '');
+      setImageUrl(session.data.user.image || '');
+    }
+  }, [session?.data?.user]);
 
   const handleLogout = async () => {
     await signOut();
@@ -18,12 +32,117 @@ export default function ProfilePage() {
     router.refresh();
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.data?.user) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIsUpdating(true);
+    setMessage(null);
+
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001';
+      
+      const response = await axios.post(
+        `${apiBaseUrl}/api/users/me/image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${session.data.token}`
+          }
+        }
+      );
+
+      // Backend returns relative path e.g. /uploads/filename
+      // We need to construct full URL for display if it's relative
+      let newImageUrl = response.data.image_url;
+      if (newImageUrl && newImageUrl.startsWith('/')) {
+        newImageUrl = `${apiBaseUrl}${newImageUrl}`;
+      }
+
+      setImageUrl(newImageUrl);
+
+      // Update local session
+      if (updateSession && session.data) {
+        updateSession({
+          ...session.data,
+          user: {
+            ...session.data.user,
+            image: newImageUrl
+          }
+        });
+      }
+
+      setMessage({ type: 'success', text: 'Profile image updated successfully!' });
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.detail || 'Failed to upload image' 
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.data?.user) return;
+
+    setIsUpdating(true);
+    setMessage(null);
+
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001';
+      
+      const response = await axios.put(
+        `${apiBaseUrl}/api/users/me`,
+        {
+          name,
+          image_url: imageUrl
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${session.data.token}`
+          }
+        }
+      );
+
+      // Update local session
+      if (updateSession && session.data) {
+        updateSession({
+          ...session.data,
+          user: {
+            ...session.data.user,
+            name: response.data.name,
+            image: response.data.image_url // Backend returns image_url, frontend expects image (mapped in useAuth/Navbar)
+          }
+        });
+      }
+
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.detail || 'Failed to update profile' 
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (!session.data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-foreground">Please log in to view your profile</h1>
-          <Button onClick={() => router.push('/auth/login')} variant="gradient">
+          <Button onClick={() => router.push('/auth/login')} className="bg-gradient-to-r from-indigo-500 to-purple-500">
             Login
           </Button>
         </div>
@@ -32,117 +151,95 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen bg-background">
       <Navbar user={session.data.user} onLogout={handleLogout} />
       
-      {/* Background blobs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-500/10 rounded-full blur-[100px] animate-float"></div>
-        <div className="absolute bottom-[10%] left-[10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[100px] animate-float" style={{ animationDelay: '3s' }}></div>
-      </div>
-
-      <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+      <main className="container mx-auto p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
               Profile Settings
             </h1>
+            <p className="text-muted-foreground">
+              Manage your account settings and preferences.
+            </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* User Card */}
-            <div className="md:col-span-1">
-              <Card className="p-6 text-center space-y-4 h-full glass border-white/10 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative z-10">
-                  <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 p-1 mb-4 shadow-xl group-hover:scale-105 transition-transform duration-300">
-                    <div className="w-full h-full rounded-full bg-background overflow-hidden">
-                      <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${session.data.user?.email || 'user'}`}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-                  <h2 className="text-xl font-bold text-foreground">{session.data.user?.name}</h2>
-                  <p className="text-muted-foreground text-sm">{session.data.user?.email}</p>
-                  
-                  <div className="pt-6">
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
-                      onClick={handleLogout}
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
+          <Card className="border-border/50 shadow-lg backdrop-blur-sm bg-card/50">
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your profile details.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex flex-col items-center gap-2">
+                  <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-indigo-500/30">
+                    <AvatarImage 
+                      src={imageUrl || session.data.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.data.user?.name || 'user'}`} 
+                      alt={session.data.user?.name || 'User'} 
+                    />
+                    <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                      {session.data.user?.name?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs text-muted-foreground">Preview</p>
                 </div>
-              </Card>
-            </div>
 
-            {/* Details Card */}
-            <div className="md:col-span-2">
-              <Card className="p-8 h-full glass border-white/10">
-                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Personal Information
-                </h3>
-                
-                <div className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">Full Name</Label>
-                      <div className="p-3 rounded-lg bg-secondary/50 border border-border/50 font-medium">
-                        {session.data.user?.name || 'Not set'}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">Email Address</Label>
-                      <div className="p-3 rounded-lg bg-secondary/50 border border-border/50 font-medium">
-                        {session.data.user?.email}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">User ID</Label>
-                      <div className="p-3 rounded-lg bg-secondary/50 border border-border/50 font-mono text-sm text-muted-foreground">
-                        {session.data.user?.id}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">Account Status</Label>
-                      <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-border/50">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="font-medium text-green-600 dark:text-green-400">Active</span>
-                      </div>
-                    </div>
+                <form onSubmit={handleUpdateProfile} className="flex-1 space-y-4 w-full">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      value={session.data?.user?.email || ''} 
+                      disabled 
+                      className="bg-muted/50" 
+                    />
+                    <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
                   </div>
 
-                  <div className="pt-6 border-t border-border/50">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Account Statistics</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
-                        <div className="text-2xl font-bold text-primary">0</div>
-                        <div className="text-xs text-muted-foreground mt-1">Total Tasks</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-green-500/5 hover:bg-green-500/10 transition-colors">
-                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">0</div>
-                        <div className="text-xs text-muted-foreground mt-1">Completed</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">0</div>
-                        <div className="text-xs text-muted-foreground mt-1">Pending</div>
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Display Name</Label>
+                    <Input 
+                      id="name" 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      placeholder="Your name" 
+                    />
                   </div>
-                </div>
-              </Card>
-            </div>
-          </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="image-upload">Profile Image</Label>
+                    <Input 
+                      id="image-upload" 
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="cursor-pointer bg-muted/50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Upload an image from your device to update your avatar.
+                    </p>
+                  </div>
+
+                  {message && (
+                    <div className={`p-3 rounded-md text-sm ${
+                      message.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                    }`}>
+                      {message.text}
+                    </div>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    disabled={isUpdating}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </form>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

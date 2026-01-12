@@ -13,6 +13,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
   emailVerified: boolean;
@@ -53,7 +54,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2 group">
+        <Link href="/dashboard" className="flex items-center space-x-2 group">
           <div className="bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-2 rounded-lg shadow-lg group-hover:shadow-indigo-500/50 transition-all duration-300 group-hover:scale-110">
             {/* Fallback icon if Icons.task is missing */}
             <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -66,6 +67,17 @@ export function Navbar({ user, onLogout }: NavbarProps) {
         </Link>
 
         <div className="flex items-center space-x-4">
+          <Link href="/dashboard">
+            <Button variant="ghost">Dashboard</Button>
+          </Link>
+          <Link href="/profile">
+            <Button variant="ghost">Profile</Button>
+          </Link>
+          <Link href="/chat">
+            <Button variant="ghost" className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:bg-gradient-to-r hover:from-indigo-600/30 hover:to-purple-600/30">
+              AI Chat
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
@@ -88,7 +100,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-offset-2 ring-offset-background ring-indigo-500/50 hover:ring-indigo-500 transition-all">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'user'}`} alt={user?.name || 'User'} />
+                  <AvatarImage src={user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'user'}`} alt={user?.name || 'User'} />
                   <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
                     {user?.name?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>

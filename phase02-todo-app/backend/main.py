@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from api.tasks import router as tasks_router
 from api.auth import router as auth_router
+from api.chat import router as chat_router
+from api.users import router as users_router
 from config.settings import settings
 from utils.database import create_db_and_tables
 
@@ -62,7 +64,9 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(users_router, prefix="/api/users")
 app.include_router(tasks_router, prefix="/api/{user_id}/tasks")
+app.include_router(chat_router, prefix="/api/{user_id}/chat")
 
 @app.get("/")
 def read_root():
@@ -88,13 +92,13 @@ def test_endpoint():
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # ✅ Hugging Face ka fixed port
+
+    # ✅ Local development port
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=7860,  # Hugging Face ka fixed port
-        proxy_headers=True,  # IMPORTANT for Hugging Face
-        forwarded_allow_ips="*",  # Allow all forwarded IPs
+        port=8001,  # Local development port
+        proxy_headers=True,
+        forwarded_allow_ips="*",
         log_level="info"
     )

@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
     return 'https://hafizubaid-todo-wep-app.hf.space';
   }
 
-  // Development mein port 8001
+  // Development mein port 8001 (same as backend)
   return 'http://localhost:8001';
 };
 

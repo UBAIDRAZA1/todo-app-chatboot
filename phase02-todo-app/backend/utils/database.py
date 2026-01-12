@@ -17,7 +17,7 @@ def create_db_and_tables():
     Create all tables in the database
     """
     # Import models yahan taaki circular import na ho
-    from models import Task, User
+    from models import Task, User, Conversation, Message
 
     # Yeh line tables create karegi (agar nahi hain to)
     SQLModel.metadata.create_all(engine)

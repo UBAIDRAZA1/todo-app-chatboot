@@ -9,6 +9,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
   emailVerified: boolean;
@@ -29,6 +30,7 @@ interface AuthContextType {
   };
   signOut: () => Promise<void>;
   signUp: (credentials: { email: string; password: string; name: string }) => Promise<any>;
+  updateSession: (newSession: Session) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -131,6 +133,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateSession = (newSession: Session) => {
+    setSession(newSession);
+  };
+
   const authContextValue: AuthContextType = {
     session: {
       data: session,
@@ -141,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     },
     signOut,
     signUp,
+    updateSession,
   };
 
   return React.createElement(AuthContext.Provider, { value: authContextValue }, children);

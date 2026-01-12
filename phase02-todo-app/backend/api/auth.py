@@ -6,25 +6,12 @@ from datetime import datetime, timedelta
 import uuid
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from models import User  # Don't import Session here, will handle JWT only
+from models import User, UserCreate, UserLogin  # Don't import Session here, will handle JWT only
 from utils.database import get_session
 from config.settings import settings
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-
-
-# -----------------------
-# Schemas
-# -----------------------
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-    name: str
 
 
 # -----------------------
