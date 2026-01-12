@@ -48,14 +48,14 @@ app.add_middleware(
     allowed_hosts=["*"]  # Allow all hosts for Hugging Face
 )
 
-# ✅ CORS middleware - UPDATED for Hugging Face
+# ✅ CORS middleware - UPDATED for Hugging Face and Vercel
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*",  # Temporary - all allow
-        # "https://your-frontend.vercel.app",
-        # "http://localhost:3000",
-        # "http://localhost:8001",
+        "https://todo-app-chatboot.vercel.app",  # Your Vercel Frontend
+        "http://localhost:3000",                 # Local Frontend
+        "http://localhost:8001",                 # Local Backend
+        "https://hafizubaid-todo-chatbot.hf.space", # Self (Backend)
     ],
     allow_credentials=True,
     allow_methods=["*"],
